@@ -20,7 +20,7 @@ def reformat_response(resp):
 
 def get_sql_from_llm(assignment,model):
     chat = model.start_chat(history=[])
-    return chat.send_message(f'You have a database with the following tables: {tables}. Those tables have the following columns: {table_columns}. Generate a sql query with each command on a different line such that it satisfies the following: '+assignment+ ". Do not explain and give no other text and put each sql command on a new line. If such a query does not make sense in the context of the database or if any requested columns do not exist return the phrase 'Invalid prompt'."), chat
+    return chat.send_message(f'You have a database with the following tables: {tables}. Those tables have the following columns: {table_columns}. Using as many new lines as is reasonable, generate a sql query such that it satisfies the following: '+assignment+ ". Do not explain and give no other text and put each sql command on a new line. If such a query does not make sense in the context of the database or if any requested columns do not exist return the phrase 'Invalid prompt'."), chat
 
 def execute_query(query:str, cur):
     try:
@@ -30,6 +30,8 @@ def execute_query(query:str, cur):
 
 def get_instructions(assignment, model, cur):
     response, chat = get_sql_from_llm(assignment,model)
+    if "\n" not in response.text:
+        response = chat.send_message("Please put each query command on a new line.")
     # Check if the prompt is valid
     if "Invalid prompt" in response.text or not any([is_sql(line) for line in response.text.split('\n')]):
         return ["None"],["Please enter a question that makes sense in the context of the database."], chat
