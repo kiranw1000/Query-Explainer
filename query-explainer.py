@@ -20,7 +20,7 @@ def reformat_response(resp):
 
 def get_sql_from_llm(assignment,model):
     chat = model.start_chat(history=[])
-    return chat.send_message(f'You have a database with the following tables: {tables}. Those tables have the following columns: {table_columns}. Generate a sql query with each command on a different line such that it satisfies the following: '+assignment+ ". Do not explain and give no other text. If such a query does not make sense in the context of the database or if any requested columns do not exist return the phrase 'Invalid prompt'."), chat
+    return chat.send_message(f'You have a database with the following tables: {tables}. Those tables have the following columns: {table_columns}. Generate a sql query with each command on a different line such that it satisfies the following: '+assignment+ ". Do not explain and give no other text and put each sql command on a new line. If such a query does not make sense in the context of the database or if any requested columns do not exist return the phrase 'Invalid prompt'."), chat
 
 def execute_query(query:str, cur):
     try:
@@ -40,11 +40,12 @@ def get_instructions(assignment, model, cur):
         results = execute_query(query, cur)
         # Check if the generated query is valid
         if results == "Invalid prompt":
-            print(f"The generated query: {query} did not make sense in the context of the database. Trying new query.")
+            print(f"Generated query {try_count+1} did not make sense in the context of the database. Trying new query.")
             response, chat = get_sql_from_llm(assignment,model)
             query = "\n".join([line for line in reformat_response(response).split('\n') if is_sql(line)])
         else:
             invalid = False
+        try_count+=1
     if invalid:
         # Return an error message if no valid query could be generated
         return ["None"],["A valid query could not be generated. Please try again."], chat
