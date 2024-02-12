@@ -30,6 +30,7 @@ def execute_query(query:str, cur):
 
 def get_instructions(assignment, model, cur):
     response, chat = get_sql_from_llm(assignment,model)
+    # Check if the prompt is valid
     if "Invalid prompt" in response.text or not any([is_sql(line) for line in response.text.split('\n')]):
         return ["None"],["Please enter a question that makes sense in the context of the database."], chat
     instructions = []
@@ -37,6 +38,7 @@ def get_instructions(assignment, model, cur):
     invalid, try_count = True,0
     while invalid and try_count<5:
         results = execute_query(query, cur)
+        # Check if the generated query is valid
         if results == "Invalid prompt":
             print(f"The generated query: {query} did not make sense in the context of the database. Trying new query.")
             response, chat = get_sql_from_llm(assignment,model)
@@ -44,8 +46,10 @@ def get_instructions(assignment, model, cur):
         else:
             invalid = False
     if invalid:
+        # Return an error message if no valid query could be generated
         return ["None"],["A valid query could not be generated. Please try again."], chat
     if len(results)<1:
+        # Return an error message if the query did not return any results
         return ["None"],["The generated query did not return any results. Please enter a valid prompt."], chat
     for query_line in query.split('\n'):
         if is_sql(query_line):
@@ -53,9 +57,11 @@ def get_instructions(assignment, model, cur):
     return results, instructions, chat
 
 def show_instructions_and_results(instructions, results):
+    # Display results of the query
     ret = "Results: \n"
     for r, result in enumerate(results):
         ret+=f"{result.__str__()}\n"
+    # Display instructions for the query
     ret += f"Instructions: \n"
     for i, instruction in enumerate(instructions):
         ret+=f"{instruction}\n"
